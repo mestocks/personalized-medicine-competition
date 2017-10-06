@@ -36,5 +36,7 @@
 
 ![](archerr.png)
 
+![](pca_check.png)
+
 
 
