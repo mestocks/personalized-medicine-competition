@@ -34,7 +34,7 @@
 - neural networks using mini-batch stochastic gradient descent and L2 normalisation
 
 
-![Error rate](https://gitlab.com/kaklow/personalized-medicine-competition/blob/master/archerr.png)
+![](archerr.png)
 
 
 
