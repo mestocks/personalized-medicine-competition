@@ -28,6 +28,10 @@
   mytrain
 - perform PCA on mytrain and use this to project mycvs and mytest onto the mytrain
   vector space to get the features for each dataset
+- check that all three datasets have been projected into the same vector space:
+
+![](pca_check.png)
+*First 8 principal components for mytrain (dark grey), mycvs (red) and mytest (blue)*
 
 ### Training (see C_train/Makefile for details)
 
@@ -35,8 +39,9 @@
 
 
 ![](archerr.png)
+*Decrease in training error for 6 different network architectures as a function of the number of epochs*
 
-![](pca_check.png)
+
 
 
 
