@@ -1,21 +1,25 @@
-# In:
-# 	test_text.zip
-#	test_variants.zip
-# 	training_text.zip
-#	training_variants.zip
-#
-#	stage1_solution_filtered.csv.7z
-#	stage2_sample_submission.csv.7z
-#	stage2_test_text.csv.7z
-#	stage2_test_variants.csv.7z
-#
-# Out:
-# 	raw_training.both raw_test.both
-# 	raw_training.ids raw_test.ids
-# 	raw_training.text raw_test.text
-
 HOME = $(shell echo $$HOME)/
 BASE = $(HOME)projects/cancer/
+
+# In:
+# 	raw/stage1/test_text.zip
+#	raw/stage1/test_variants.zip
+# 	raw/stage1/training_text.zip
+#	raw/stage1/training_variants.zip
+#
+#	raw/stage2/stage2_test_text.csv.7z
+#	raw/stage2/stage2_test_variants.csv.7z
+#	raw/stage2/stage1_solution_filtered.csv.7z
+#	raw/stage2/stage2_sample_submission.csv.7z
+#
+# Out:
+#	raw/stage12/test_text
+# 	raw/stage12/test_variants
+# 	raw/stage12/training_text
+# 	raw/stage12/training_variants
+#
+# Dependencies:
+#	zip, 7za
 
 RAW = $(BASE)raw/
 STG1 = $(RAW)stage1/
@@ -31,12 +35,19 @@ datasets = test training
 # new data are in the same order. [OK]
 
 .PHONY:	combine-stage12
-combine-stage12:	$(STG12)training_variants $(STG12)training_text
+combine-stage12:	$(STG12)training_variants $(STG12)training_text $(STG12)test_variants $(STG12)test_text
 
 $(STG12)training_variants:	$(STG1)training_variants $(STG2)extra_training_variants
 	cat $^ > $@
 
 $(STG12)training_text:	$(STG1)training_text $(STG2)extra_training_text
+	cat $^ > $@
+
+
+$(STG12)test_variants:	$(STG2)stage2_test_variants.csv
+	cat $^ > $@
+
+$(STG12)test_text:	$(STG2)stage2_test_text.csv
 	cat $^ > $@
 
 

@@ -1,6 +1,27 @@
 HOME = $(shell echo $$HOME)/
 BASE = $(HOME)projects/cancer/
 
+# In:
+#	raw/stage12/test_text
+# 	raw/stage12/test_variants
+# 	raw/stage12/training_text
+# 	raw/stage12/training_variants
+#
+# Out:
+#	data/feat/mycvs.xw
+#	data/feat/mytest.xw
+#	data/feat/alltest.xw
+#	data/feat/mytrain_ans.xw
+#	data/feat/alltrain_ans.xw
+#	data/feat/bi_uniq_word.txt
+#
+# Dependencies:
+#	python2, numpy
+#
+# Scripts:
+#	chargrok.c, mean.py, sigma.py,
+#	subset.py, normalise_alt.py, pca.py
+
 RAW = $(BASE)raw/
 STG1 = $(RAW)stage1/
 STG2 = $(RAW)stage2/
@@ -11,17 +32,30 @@ DATA = $(BASE)data/
 FEAT = $(DATA)feat/
 
 pfx = pnc_pval_lwr_
-datasets = training
+datasets = training test
 data-ids = $(addsuffix .ids,$(datasets))
 data-text = $(addsuffix .text,$(datasets))
 data-both = $(addsuffix .both,$(datasets))
 
 
 .PHONY:	pca
-pca:	$(FEAT)mytrain_ans.xw $(FEAT)mycvs_ans.xw $(FEAT)mytest_ans.xw $(FEAT)mytrain.xw $(FEAT)mycvs.xw $(FEAT)mytest.xw $(FEAT)mytrain.ans $(FEAT)mycvs.ans $(FEAT)mytest.ans
+pca:	$(FEAT)alltest.xw $(FEAT)alltrain_ans.xw $(FEAT)alltrain.xw $(FEAT)mytrain_ans.xw $(FEAT)mycvs_ans.xw $(FEAT)mytest_ans.xw $(FEAT)mytrain.xw $(FEAT)mycvs.xw $(FEAT)mytest.xw $(FEAT)alltrain.ans $(FEAT)mytrain.ans $(FEAT)mycvs.ans $(FEAT)mytest.ans $(FEAT)mytrain.vt $(FEAT)alltrain1_ans.xw $(FEAT)alltrain1.xw $(FEAT)alltrain2_ans.xw $(FEAT)alltrain2.xw
 
 #pcplot.png:	training_ids.xw $(RAW)training_variants training.xw
 #	Rscript $(SCR)pca.r $^ $@
+
+$(FEAT)alltrain1_ans.xw:	$(FEAT)alltrain_ans.xw
+	head -n 1951 $^ > $@
+
+$(FEAT)alltrain1.xw:	$(FEAT)alltrain.xw
+	head -n 1951 $^ > $@
+
+$(FEAT)alltrain2_ans.xw:	$(FEAT)alltrain_ans.xw
+	tail -n 1738 $^ > $@
+
+$(FEAT)alltrain2.xw:	$(FEAT)alltrain.xw
+	head -n 1738 $^ > $@
+
 
 $(FEAT)%_ans.xw:	$(FEAT)%.xw $(FEAT)%.ans
 	paste -d ' ' $^ > $@
@@ -37,14 +71,17 @@ $(FEAT)%.vt:	$(FEAT)%.nrm
 
 
 .PHONY:	normalise
-normalise:	$(FEAT)mytrain.nrm $(FEAT)mycvs.nrm $(FEAT)mytest.nrm
+normalise:	$(FEAT)alltest.nrm $(FEAT)alltrain.nrm $(FEAT)mytrain.nrm $(FEAT)mycvs.nrm $(FEAT)mytest.nrm
 
 $(FEAT)my%.nrm:	$(FEAT)my%.raw $(FEAT)mytrain.mu $(FEAT)mytrain.sigma
 	python ~/repos/pca/normalise_alt.py $(word 1,$^) $(word 2,$^) $(word 3,$^) $@
 
+$(FEAT)all%.nrm:	$(FEAT)all%.raw $(FEAT)mytrain.mu $(FEAT)mytrain.sigma
+	python ~/repos/pca/normalise_alt.py $(word 1,$^) $(word 2,$^) $(word 3,$^) $@
+
 
 .PHONY:	subset
-subset:	$(FEAT)mytrain.raw $(FEAT)mycvs.raw $(FEAT)mytest.raw
+subset:	$(FEAT)alltest.raw $(FEAT)alltrain.raw $(FEAT)mytrain.raw $(FEAT)mycvs.raw $(FEAT)mytest.raw
 
 $(FEAT)%.raw:	$(FEAT)pre_%.raw $(FEAT)pre_mytrain.mu $(FEAT)pre_mytrain.sigma
 	python ~/repos/pca/subset.py $^ $@ $(FEAT)$*.mu $(FEAT)$*.sigma
@@ -61,12 +98,12 @@ mean-sigma:	$(FEAT)pre_mytrain.mu $(FEAT)pre_mytrain.sigma
 	python ~/repos/pca/sigma.py $^ $@
 
 
-# ntrain = 3690
-# train 2952 (80%): mytest 738 (20%)
+# ntrain = 3689
+# train 2952 (80%): mytest 737 (20%)
 # mytrain 2362 (80%): mycsv 590 (20%)
 
 .PHONY:	data-split
-data-split:	$(FEAT)pre_mytrain.raw $(FEAT)mytrain.ids $(FEAT)pre_mytrain.ans $(FEAT)pre_mycvs.raw $(FEAT)mycvs.ids $(FEAT)pre_mycvs.ans $(FEAT)pre_mytest.raw $(FEAT)mytest.ids $(FEAT)pre_mytest.ans
+data-split:	$(FEAT)pre_alltest.raw $(FEAT)pre_alltrain.raw $(FEAT)alltrain.ids $(FEAT)pre_alltrain.ans $(FEAT)pre_mytrain.raw $(FEAT)mytrain.ids $(FEAT)pre_mytrain.ans $(FEAT)pre_mycvs.raw $(FEAT)mycvs.ids $(FEAT)pre_mycvs.ans $(FEAT)pre_mytest.raw $(FEAT)mytest.ids $(FEAT)pre_mytest.ans
 
 $(FEAT)pre_mytrain.raw:	$(FEAT)pre_training.raw
 	head -n 2362 $^ > $@
@@ -89,17 +126,31 @@ $(FEAT)pre_mycvs.ans:	$(FEAT)pre_training.ans
 
 
 $(FEAT)pre_mytest.raw:	$(FEAT)pre_training.raw
-	tail -n 738 $^ > $@
+	tail -n 737 $^ > $@
 
 $(FEAT)mytest.ids:	$(FEAT)training.ids
-	tail -n 738 $^ > $@
+	tail -n 737 $^ > $@
 
 $(FEAT)pre_mytest.ans:	$(FEAT)pre_training.ans
-	tail -n 738 $^ > $@
+	tail -n 737 $^ > $@
+
+
+$(FEAT)pre_alltrain.raw:	$(FEAT)pre_training.raw
+	cat $^ > $@
+
+$(FEAT)alltrain.ids:	$(FEAT)training.ids
+	cat $^ > $@
+
+$(FEAT)pre_alltrain.ans:	$(FEAT)pre_training.ans
+	cat $^ > $@
+
+
+$(FEAT)pre_alltest.raw:	$(FEAT)pre_test.raw
+	cat $^ > $@
 
 
 .PHONY:	shuffle
-shuffle:	$(FEAT)pre_training.raw $(FEAT)training.ids $(FEAT)pre_training.ans
+shuffle:	$(FEAT)pre_test.raw $(FEAT)training_ans.uraw $(FEAT)pre_training.raw $(FEAT)training.ids $(FEAT)pre_training.ans
 
 $(FEAT)pre_training.ans:	$(STG12)training_text $(FEAT)training_ans.uraw
 	shuf --random-source=$(word 1,$^) $(word 2,$^) > $@
@@ -112,6 +163,9 @@ $(FEAT)training.ids:	$(STG12)training_text $(FEAT)training.buids
 
 $(FEAT)training_ans.uraw:	$(STG12)training_variants
 	grep "^ID" -v $^ | awk -F, ' { print $$NF } ' > $@
+
+$(FEAT)pre_test.raw:	$(FEAT)test.buraw
+	cat $^ > $@
 
 
 ############
@@ -153,10 +207,10 @@ $(FEAT)%.bcount:	$(FEAT)%.bline
 .PHONY:	word-discovery
 word-discovery:	$(FEAT)uniq_words.txt $(FEAT)bi_uniq_words.txt
 
-$(FEAT)uniq_words.txt:	$(FEAT)$(pfx)training.nline $(FEAT)stop_words.txt
+$(FEAT)uniq_words.txt:	$(FEAT)$(pfx)training.nline stop_words.txt
 	cut -d',' -f 1 $(word 1,$^) | grep "[^a-z]" -v | grep "[^actgu]" | grep -xvf $(word 2,$^) | awk ' { if (length($$1) < 20 && length($$1) > 3) print $$1 } ' | sort | uniq -c | awk ' { if ($$1 > 75) print $$2 }' > $@
 
-$(FEAT)bi_uniq_words.txt:	$(FEAT)$(pfx)training.nline $(FEAT)stop_words.txt $(FEAT)academic_words.txt
+$(FEAT)bi_uniq_words.txt:	$(FEAT)$(pfx)training.nline stop_words.txt academic_words.txt
 	cut -d',' -f 1 $(word 1,$^) | grep "[^a-z]" -v | grep "[^actgu]" | grep -xvf $(word 2,$^) | grep -xvf $(word 3,$^) | awk ' { if (length($$1) < 20 && length($$1) > 3) print $$1 } ' | awk ' BEGIN { old="" }; { if (NR != 1) { if (old < $$1) print old"-"$$1; else print $$1"-"old } old=$$1 } ' | sort | uniq -c | awk ' { if ($$1 > 175) print $$2 }' > $@
 
 
@@ -170,28 +224,28 @@ $(FEAT)%.nline:	$(FLTR)%.both
 	awk ' { $$1=$$1; for (i=2; i<=NF; i++) print $$i","$$1 } ' $^ | tr -d '[:blank:]' > $@
 
 $(FEAT)%.bline:	$(FLTR)%.both
-	awk ' { $$1=$$1; n=1; for (i=2; i<=NF; i++) { if (n != 1) { if (old < $$i) bistr=old"-"$$i; else bistr=$$i"-"old; print bistr","$$1 } n++; old=$$i } } ' $^ | tr -d '[:blank:]' > $@
+	awk ' { $$1=$$1; if (NF < 3) { print "null-null,"$$1 } else {old=$$2; for (i=3; i<=NF; i++) { if (old < $$i) { bistr=old"-"$$i } else { bistr=$$i"-"old } print bistr","$$1; old=$$i } } } ' $^ | tr -d '[:blank:]' > $@
 
 
 ############
 # Filtering
 
 .PHONY:	rm-punc
-rm-punc:	$(FLTR)pnc_pval_lwr_training.both
+rm-punc:	$(FLTR)pnc_pval_lwr_training.both $(FLTR)pnc_pval_lwr_test.both
 
 $(FLTR)pnc_%.both:	$(FLTR)%.both
 	tr '[\t()\.,;:{}*%~\"]' ' ' < $^ | tr -d '-' | tr -s ' ' > $@
 
 
 .PHONY:	pval
-pval:	$(FLTR)pval_lwr_training.both
+pval:	$(FLTR)pval_lwr_training.both $(FLTR)pval_lwr_test.both
 
 $(FLTR)pval_%.both:	$(FLTR)%.both
 	sed -e 's/p-value/pvalue/g' < $^ | sed -e 's/p = /pvalue = /g' | sed -e 's/p=/pvalue=/g' | sed -e 's/pvalues/pvalue/g' | sed -e 's/pvalue < /pvalue</g' | sed -e 's/pvalue = /pvalue=/g' | sed -e 's/pvalue</pvalueless /g' | sed -e 's/pvalue=/pvalueequal /g' > $@
 
 
 .PHONY:	to-lower
-to-lower:	$(FLTR)lwr_training.both
+to-lower:	$(FLTR)lwr_training.both $(FLTR)lwr_test.both
 
 $(FLTR)lwr_%.both:	$(FLTR)raw_%.both
 	tr '[:upper:]' '[:lower:]' < $^ > $@

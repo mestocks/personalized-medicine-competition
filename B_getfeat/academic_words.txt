@@ -1,0 +1,11 @@
+fig
+figure
+figures
+table
+tables
+supplementary
+abstract
+introduction
+methods
+results
+discussion
